@@ -5,6 +5,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Drawing;
 
 namespace PrviProjekat
 {
@@ -13,12 +14,14 @@ namespace PrviProjekat
         private HttpListener listener;
         private string root;
         private string listenUrl;
-        public WebServer(string[] prefixes)
+        static object locker = new object();
+        static Dictionary<string, byte[]> ImageCache = new Dictionary<string, byte[]>();
+        public WebServer(string[] arg)
         {
             Console.WriteLine("Server thread started.");
 
-            this.listenUrl = prefixes[0]; 
-            this.root = prefixes[1];
+            this.listenUrl = arg[0]; 
+            this.root = arg[1];
         }
 
         public void Start()
@@ -41,11 +44,6 @@ namespace PrviProjekat
                 Console.WriteLine(ex.ToString());
             }
         }
-
-        public void Stop()
-        {
-            Console.WriteLine("Server thread stopped.");
-        }
         private void HandleRequest(object? context)
         {
             try
@@ -64,14 +62,21 @@ namespace PrviProjekat
                 {
                     string fileExt = Path.GetExtension(url);
                     string imageName = Path.GetFileName(url);
-
-                    if (fileExt == ".jpg" || fileExt == ".jpeg" || fileExt == ".png")
+                    if (imageName == "")
                     {
-                        returnImage(response, imageName);
+                        HandleError(response, "");
                     }
                     else
                     {
-                        HandleError(response, "type");
+                        if (fileExt == ".jpg" || fileExt == ".jpeg" || fileExt == ".png")
+                        {
+                            returnImage(response, imageName);
+                            Console.WriteLine("Request succesfully processed.");
+                        }
+                        else
+                        {
+                            HandleError(response, "type");
+                        }
                     }
                 }
             }
@@ -81,7 +86,7 @@ namespace PrviProjekat
             }
             finally
             {
-                Console.WriteLine("Request is processed.");
+                Console.WriteLine("Finshed with the request.\n");
             }
         }
         private void HandleError(HttpListenerResponse res, string error)
@@ -116,9 +121,11 @@ namespace PrviProjekat
                     }
                     else
                     {
-                        ret = "<h2>Loš zahtev.</h2>";
+                        ret = "<h2>Error - bad request.</h2>";
                         res.StatusCode = (int)HttpStatusCode.BadRequest;
                         res.StatusDescription = "Bad request.";
+                        Console.WriteLine("Error - bad request.");
+
                     }
                 }
             }
@@ -136,12 +143,27 @@ namespace PrviProjekat
             string path = Directory.GetFiles(root, imageName, SearchOption.AllDirectories).FirstOrDefault();
             if (path!=null)
             {
+                byte[] buf;
+                //provera da li je u kesu
+                lock (locker)
+                {
+                    if (ImageCache.TryGetValue(imageName, out buf))//in kes)
+                    {
+                        Console.WriteLine("Requested image is in cache.");
+                    }
+                    else
+                    {
+                        buf = File.ReadAllBytes(path);
+                        ImageCache.Add(imageName, buf);
+                        Console.WriteLine("Requested image is not in cache. Adding it to cache.");
+
+                    }
+                }
+
                 res.StatusCode = (int)HttpStatusCode.OK;
                 res.StatusDescription = "Status OK";
                 res.Headers.Set("Content-Type", "image/jpg");
-
                 using Stream output = res.OutputStream;
-                byte[] buf = File.ReadAllBytes(path);
                 res.ContentLength64 = buf.Length;
                 output.Write(buf, 0, buf.Length);
                 output.Close();

@@ -8,18 +8,18 @@ namespace PrviProjekat
     internal class Program
     {
         static string port = "5000/";
-        static string prefix = "http://localhost:" + port;
+        static string url = "http://localhost:" + port;
         static string root = "..\\..\\..\\..\\Root\\";
 
         static void Main(string[] args)
         {
             Console.WriteLine("Main thread...");
 
-            string[] prefixes = { prefix , root};
+            string[] arguments = { url , root};
 
             Thread server = new Thread(() =>
             {
-                WebServer server = new WebServer(prefixes);
+                WebServer server = new WebServer(arguments);
                 server.Start();
             });
 
