@@ -14,14 +14,16 @@ namespace PrviProjekat
         private HttpListener listener;
         private string root;
         private string listenUrl;
-        static object locker = new object();
-        static Dictionary<string, byte[]> ImageCache = new Dictionary<string, byte[]>();
+        Cache ImageCache;
+
         public WebServer(string[] arg)
         {
             Console.WriteLine("Server thread started.");
 
             this.listenUrl = arg[0]; 
             this.root = arg[1];
+
+            ImageCache = new Cache();
         }
 
         public void Start()
@@ -54,6 +56,7 @@ namespace PrviProjekat
                 Console.WriteLine($"Received request at {url}.");
 
                 HttpListenerResponse response = localContext.Response;
+
                 if (request.HttpMethod != "GET")
                 {
                     HandleError(response, "method");
@@ -145,20 +148,18 @@ namespace PrviProjekat
             {
                 byte[] buf;
                 //provera da li je u kesu
-                lock (locker)
-                {
-                    if (ImageCache.TryGetValue(imageName, out buf))//in kes)
+
+                    if (ImageCache.GetImageFromCache(imageName, out buf))
                     {
                         Console.WriteLine("Requested image is in cache.");
                     }
                     else
                     {
                         buf = File.ReadAllBytes(path);
-                        ImageCache.Add(imageName, buf);
+                        ImageCache.AddImageToCache(imageName, buf);
                         Console.WriteLine("Requested image is not in cache. Adding it to cache.");
 
                     }
-                }
 
                 res.StatusCode = (int)HttpStatusCode.OK;
                 res.StatusDescription = "Status OK";
