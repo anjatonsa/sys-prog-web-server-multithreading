@@ -11,6 +11,8 @@ namespace PrviProjekat
     {
         static object locker = new object();
         static Dictionary<string, byte[]> ImageCache;
+        static LinkedList<string> fifo= new LinkedList<string>();
+        private int capcity = 2;
 
         public Cache()
         {
@@ -21,10 +23,12 @@ namespace PrviProjekat
         {
             lock(locker)
             {
-                if (ImageCache.ContainsKey(imageName))
-                    return;
-
+                if(fifo.Count == capcity) 
+                {
+                    DeleteFromCache(fifo.Last.Value);
+                }
                 ImageCache.Add(imageName, buf);
+                fifo.AddFirst(imageName);
             }
         }
 
@@ -37,6 +41,14 @@ namespace PrviProjekat
                   
             }
             return hit;
+        }
+
+        private void DeleteFromCache(string imageName) 
+        {
+                lock (locker)
+                {
+                    ImageCache.Remove(imageName);
+                }
         }
     }
 }

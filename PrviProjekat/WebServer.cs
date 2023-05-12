@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.Numerics;
 
 namespace PrviProjekat
 {
@@ -33,7 +34,7 @@ namespace PrviProjekat
                 listener = new HttpListener();
                 listener.Prefixes.Add(listenUrl);
                 listener.Start();
-                Console.WriteLine("Server is listening.");
+                Console.WriteLine("Server is listening.\n");
 
                 while (listener.IsListening)
                 {
@@ -53,6 +54,11 @@ namespace PrviProjekat
                 HttpListenerContext localContext = context as HttpListenerContext;
                 HttpListenerRequest request = localContext.Request;
                 string url = request.Url.ToString();
+                string ignore = $"{listenUrl}favicon.ico";
+                if (url == ignore)
+                {
+                    return;
+                }
                 Console.WriteLine($"Received request at {url}.");
 
                 HttpListenerResponse response = localContext.Response;
@@ -74,7 +80,7 @@ namespace PrviProjekat
                         if (fileExt == ".jpg" || fileExt == ".jpeg" || fileExt == ".png")
                         {
                             returnImage(response, imageName);
-                            Console.WriteLine("Request succesfully processed.");
+                            Console.WriteLine("Request succesfully processed.\n");
                         }
                         else
                         {
@@ -87,10 +93,6 @@ namespace PrviProjekat
             {
                 Console.WriteLine(ex.Message);    
             }
-            finally
-            {
-                Console.WriteLine("Finshed with the request.\n");
-            }
         }
         private void HandleError(HttpListenerResponse res, string error)
         {
@@ -101,7 +103,7 @@ namespace PrviProjekat
                 ret = "<h2>Error - only GET request is valid.</h2>";
                 res.StatusCode = (int)HttpStatusCode.BadRequest;
                 res.StatusDescription = "Bad request";
-                Console.WriteLine("Error - only GET request is valid.");
+                Console.WriteLine("Error - only GET request is valid.\n");
             }
             else
             {
@@ -110,7 +112,7 @@ namespace PrviProjekat
                     ret = "<h2>Error - invalid type of file requested.</h2>";
                     res.StatusCode = (int)HttpStatusCode.NotAcceptable;
                     res.StatusDescription = "Not acceptable.";
-                    Console.WriteLine("Error - invalid type of file requested.");
+                    Console.WriteLine("Error - invalid type of file requested.\n");
                 }
                 else
                 {
@@ -119,7 +121,7 @@ namespace PrviProjekat
                         ret = "<h2>Error - requested file is not available.</h2>";
                         res.StatusCode = (int)HttpStatusCode.NotFound;
                         res.StatusDescription = "Not found.";
-                        Console.WriteLine("Error - requested file is not available.");
+                        Console.WriteLine("Error - requested file is not available.\n");
 
                     }
                     else
@@ -127,7 +129,7 @@ namespace PrviProjekat
                         ret = "<h2>Error - bad request.</h2>";
                         res.StatusCode = (int)HttpStatusCode.BadRequest;
                         res.StatusDescription = "Bad request.";
-                        Console.WriteLine("Error - bad request.");
+                        Console.WriteLine("Error - bad request.\n");
 
                     }
                 }
